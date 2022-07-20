@@ -1,0 +1,423 @@
+---
+title: "3_Introduction_to_Tidyverse_Package"
+author: "Matt Steele"
+date: '2022-03-17'
+output: html_document
+---
+
+
+===============================================================================
+
+## Get and Set Working Directory ------------------------------------
+
+```{r message=FALSE, warning=FALSE}
+
+# get working directory
+
+  getwd()
+
+# set working directory
+  
+  setwd("~/RWorkshop Development/workshop_firstSteps_R")
+  
+# you can set wd by using menu > session > set working directory > choose directory
+
+
+```
+
+=========================================================================
+
+## Packages -----------------------------------------------------------
+
+    ## Packages that you will need to have installed for this workshop
+
+```{r message=FALSE, warning=FALSE}
+
+install.packages("tidyverse")
+
+```
+
+    ## Packages that you will need to load for this workshop
+
+```{r message=FALSE, warning=FALSE}
+
+library(tidyverse)
+
+```
+
+=============================================================================
+
+## Resources ---------------------------------------------------------------
+
+    Tidyverse Documentation - https://www.tidyverse.org/
+    
+    RStudio Cheatsheets - https://www.rstudio.com/resources/cheatsheets/ 
+    
+===============================================================================
+
+## Tidyverse ----------------------------------------------------------------
+
+    # collection of packages for data analysis and data visualizations
+
+      ## ggplot2 - data visualization 
+          - https://ggplot2.tidyverse.org/
+      
+      ## tibble - lighter and more user-friendly version of data.frame() 
+          - https://tibble.tidyverse.org/
+      
+      ## tidyr - create tidy and meaningfully arranged data 
+          - https://tidyr.tidyverse.org/
+      
+      ## readr - sidesteps the limitations of the R functions when importing data into R 
+          - https://readr.tidyverse.org/
+      
+      ## purrr - better functional programming 
+          - https://purrr.tidyverse.org/
+      
+      ## dplyr - data manipulation tools 
+          - https://dplyr.tidyverse.org/
+
+
+==============================================================================
+
+## Pipe Operator ( %>% ) -----------------------------------------------------
+
+    # allows you to separate and unite individual operations on an object
+        # CTRL + SHIFT + M (windows)
+        # CMD + SHIFT + M (mac)
+        
+    # data %>% operation A %>% operation B
+        
+```{r}
+
+my.house %>%
+    group_by(Majority_votes) %>%
+    summarise(count = n(), avg.vote = mean(Seat_difference, na.rm = T)) %>%
+    filter(count >1)
+
+```
+
+===============================================================================
+
+## Part I - Read data into R using Tibble ------------------------------------
+
+    # allows for lighter and cleaner data frames
+    
+```{r}
+help('as_tibble')
+
+```
+
+```{r}
+
+my.house <- read.csv("house_2018_bystate.csv", stringsAsFactors = T)
+
+my.house <- as_tibble(my.house)
+
+  summary(my.house)
+
+```
+
+    # Function: read_*()
+
+```{r}
+
+help("read_csv")
+
+```
+
+```{r}
+
+sports.donations <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/sports-political-donations/sports-political-donations.csv")
+
+  sports.donations
+
+```
+
+===============================================================================
+
+## Part II - Manipulate your data with the Dplyr Package ----------------------
+
+
+    # Function: filter() - subsets data according to criteria
+    
+```{r}
+
+?dplyr::filter
+
+```
+    
+```{r}
+
+# Filter data to just include observations where the investigation variable is russia
+
+filter(president.investigation, investigation == "russia")
+
+# Add boolean operators (| == or) and (& == and)
+
+sports.donations
+sports.donations$Amount <-  parse_number(sports.donations$Amount)
+
+republican.donations <- filter(sports.donations, Party == "Republican" | Party == "Bipartisan")
+  republican.donations
+  mean(republican.donations$Amount)
+
+```
+
+    # Function: select() - keeps ONLY selected variables
+    
+```{r}
+
+?dplyr::select
+
+```
+
+```{r}
+
+majority.seats <- select(my.house, Majority_seats, Vote_difference, Seat_difference)
+  summary(majority.seats)
+
+
+```
+
+    # Function: mutate() - create a new variable and append it to the data frame
+    
+```{r}
+
+?dplyr::mutate
+
+```
+
+```{r}
+
+my.house <- mutate(my.house, Seat_diff = abs(Republican_seats - Democrat_seats))
+    my.house
+
+```
+
+    # Function: transmute() - creates a new variable and discards the rest of the data frame
+    
+```{r}
+
+?dplyr::transmute
+
+```
+
+```{r}
+
+seat.difference <- transmute(my.house, Seat_diff = abs(Republican_seats - Democrat_seats))
+  seat.difference
+
+```
+
+    # Function: arrange() - sort data frame by variables
+    
+```{r}
+
+?dplyr::arrange
+
+```
+    
+```{r}
+
+arrange(sports.donations, +(Amount))
+arrange(sports.donations, -(Amount))
+
+```
+
+
+    # Function: summarise() - get a summary of a group
+    
+```{r}
+
+?dplyr::summarise
+
+```
+    
+```{r}
+
+dplyr::summarise(republican.donations, avgAmount = mean(Amount)) 
+
+```
+
+
+    # Function: group_by() - group a categorical variable and create a new table
+ 
+ 
+```{r}
+
+?dplyr::group_by
+
+```
+    
+```{r}
+
+republican.byOwner <- republican.donations %>% 
+  group_by(Owner) %>%
+  summarise(avg.amount = mean(Amount))
+
+  republican.byOwner
+
+
+```
+
+    # Function: sample() - randomly sample from the data frame
+    
+```{r}
+
+?dplyr::sample_n
+
+?dplyr::sample_frac
+
+```
+
+
+```{r}
+
+sample.donations <- sports.donations %>%  sample_n(20, replace = T)
+  sample.donations
+  
+sample.donations <- sports.donations %>% sample_frac(.25, replace = T)
+  sample.donations
+
+```
+
+===============================================================================
+
+## Part III - Tidy up your Data with the Tidyr package -----------------------
+
+    # Function: pivot_longer() - convert variables to observations
+
+```{r}
+
+?tidyr::pivot_longer
+
+```
+
+
+```{r}
+
+covid19.us <- read.csv("time_series_covid19_confirmed_US.csv", stringsAsFactors = F)
+      covid19.us <- as_tibble(covid19.us)
+      covid19.us
+
+```
+
+
+```{r}
+
+covid.clean <- covid19.us %>% pivot_longer(January.22..2020:October.19..2020, values_to = "Cases", names_to = "Date") %>% arrange(-Cases)
+
+  covid.clean
+
+```
+
+    # Function: as.Date() - convert =value to a date value
+    
+```{r}
+
+?as.Date
+
+```
+
+```{r}
+
+covid.clean$Date <- as.Date(x = covid.clean$Date, tryFormats = c("%B.%d..%Y"))
+      covid.clean
+
+```
+
+
+
+    # Function: separate() - create new variables by separating elements from a variable
+    
+```{r}
+
+?tidyr::separate
+
+```
+
+```{r}
+
+covid.clean <- covid.clean %>% 
+  separate(Combined_Key, sep = ", ", into = c("City", "State", "Country")) %>% 
+  separate(Date, sep = "-", into = c("Year", "Month", "Day"))
+
+  covid.clean
+
+```
+
+    # Function: unite() - create a new variable by uniting element from multiple variables
+    
+```{r}
+
+covid.cleanUnited <- covid.clean %>% 
+  unite("Date", sep = "-", c("Year", "Month", 'Day'))
+
+covid.cleanUnited$Date <- as.Date(covid.cleanUnited$Date)
+
+  covid.cleanUnited
+
+```
+
+covid.united <- covid.separate.date %>% unite("Date", sep = "-", c("Year", "Month", 'Day'))
+      covid.united$Date <- as.Date(covid.united$Date)
+
+==============================================================================
+    
+## Part IV - Visualize your data with GGplot2
+
+      # Let create a bar graph using cases by state in October
+
+```{r}
+
+covid.cleanOct <- covid.clean %>% filter(Month == 10) %>% na.omit # only include October
+
+```
+
+      # Set the parameters
+      
+      
+```{r}
+
+bar.covid.state <- ggplot(covid.clean, aes(State), (x=factor(trunc(runif(10000, 0, 100)), ordered=T)))
+      bar.covid.state
+
+```
+
+      # Plot the data
+      
+```{r}
+
+bar.covid.state + geom_bar(fill = "coral") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "COVID Cases by State", 
+       subtitle = "October 2020", 
+        x = NULL, 
+        y = NULL)
+
+```
+
+
+      # Let's create a line graph of cases over time
+      
+```{r}
+
+
+line.covid.time <- ggplot(covid.cleanUnited, aes(x = Date, y = Cases)) 
+      
+
+line.covid.time + stat_smooth(show.legend = F, color = "coral", n = 180) + 
+  theme_minimal() +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  labs( x = NULL, 
+        y = NULL,
+        title = "COVID-19 Cases in the United States",
+        subtitle = "through October 2020"
+    )
+
+```
+
+
+
+  
